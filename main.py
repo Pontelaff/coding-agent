@@ -5,15 +5,21 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 
-EXAMPLE_PROMT = "Tell me about yourself in 100 words or less"
+def main(args) -> int:
+    if len(args) <= 1:
+        print("ERROR: Prompt is missing!")
+        return 1
+    if len(args) > 2:
+        print("ERROR: Too many arguments! Make sure to enclose prompt in quotation marks.")
+        return 1
 
-def main() -> int:
+    prompt = args[1]
 
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
-    print('"' + EXAMPLE_PROMT + '"\n')
-    response = client.models.generate_content(model="gemini-2.5-flash", contents=EXAMPLE_PROMT)
+    print('"' + prompt + '"\n')
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
 
     print(response.text)
 
@@ -23,5 +29,5 @@ def main() -> int:
     return 0
 
 if __name__ == "__main__":
-   sys.exit(main())
+    sys.exit(main(sys.argv))
 
