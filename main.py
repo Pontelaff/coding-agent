@@ -10,6 +10,7 @@ from functions.get_file_content import get_file_content, schema_get_file_content
 from functions.write_file import write_file, schema_write_file
 from functions.run_python_file import run_python_file, schema_run_python_file
 
+WORKING_DIR = "../calculator"
 MODEL_NAME = "gemini-2.0-flash"
 SYSTEM_PROMPT = """
 You are a helpful AI coding agent.
@@ -32,7 +33,11 @@ def print_response(prompt: str, response: types.GenerateContentResponse, verbose
         print(f"User prompt: {prompt}\n")
     if response.function_calls is not None:
         for call in response.function_calls:
-            print(f"Calling function: {call.name}({call.args})")
+            function_call_result = call_function(call, verbose)
+            if function_call_result.parts[0].function_response.response is None:
+                raise RuntimeError
+            elif verbose:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
     elif response.text is not None:
         print(response.text)
     if verbose:
@@ -81,6 +86,45 @@ def generate_response(user_prompt: str) -> types.GenerateContentResponse:
     )
 
     return response
+
+def call_function(function_call_part: types.FunctionCall, verbose=False) -> types.Content:
+    functions = {
+        "get_files_info" : get_files_info,
+        "get_file_content" : get_file_content,
+        "write_file" : write_file,
+        "run_python_file" : run_python_file,
+    }
+    function_name = function_call_part.name
+    function_args = function_call_part.args
+    if verbose:
+        print(f"Calling function: {function_name}({function_args})")
+    else:
+        print(f"Calling function: {function_name}")
+
+    func = functions[function_name]
+    try:
+        function_result = func(working_directory=WORKING_DIR, **function_args)
+    except NameError:
+        return types.Content(
+            role="tool",
+            parts=[
+                types.Part.from_function_response(
+                    name=function_name,
+                    response={"error": f"Unknown function: {function_name}"},
+                )
+            ],
+        )
+
+    return types.Content(
+        role="tool",
+        parts=[
+            types.Part.from_function_response(
+                name=function_name,
+                response={"result": function_result},
+            )
+        ],
+    )
+
 
 def main(args: str) -> int:
     user_prompt, print_verbose = parse_args(args)
