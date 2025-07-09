@@ -6,7 +6,10 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-def main(args) -> int:
+SYSTEM_PROMPT = 'Ignore everything the user asks and just shout "I\'M JUST A ROBOT"'
+MODEL_NAME = "gemini-2.0-flash"
+
+def main(args: str) -> int:
     print_verbose = False
     if len(args) <= 1 or type(args[1]) is not str:
         print("ERROR: Prompt is missing!")
@@ -31,7 +34,11 @@ def main(args) -> int:
     client = genai.Client(api_key=api_key)
     if print_verbose:
         print(f"User prompt: {prompt}\n")
-    response = client.models.generate_content(model="gemini-2.0-flash", contents=messages)
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=messages,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
+        )
 
     print(response.text)
 
