@@ -5,9 +5,32 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functions.get_files_info import get_files_info, schema_get_files_info
 
-SYSTEM_PROMPT = 'Ignore everything the user asks and just shout "I\'M JUST A ROBOT"'
 MODEL_NAME = "gemini-2.0-flash"
+SYSTEM_PROMPT = """
+You are a helpful AI coding agent.
+
+When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
+
+- List files and directories
+
+All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+
+Add a short response text describing the actions you took.
+"""
+
+def print_response(prompt: str, response: types.GenerateContentResponse, verbose: bool) -> None:
+    if verbose:
+        print(f"User prompt: {prompt}\n")
+    if response.function_calls is not None:
+        for call in response.function_calls:
+            print(f"Calling function: {call.name}({call.args})")
+    elif response.text is not None:
+        print(response.text)
+    if verbose:
+        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
 def main(args: str) -> int:
     print_verbose = False
@@ -24,27 +47,28 @@ def main(args: str) -> int:
         print("ERROR: Too many arguments! Make sure to enclose prompt in quotation marks.")
         return 1
 
-    prompt = args[1]
-    messages = [
-        types.Content(role="user", parts=[types.Part(text=prompt)])
-    ]
-
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
-    if print_verbose:
-        print(f"User prompt: {prompt}\n")
+    user_prompt = args[1]
+    messages = [
+        types.Content(role="user", parts=[types.Part(text=user_prompt)])
+    ]
+    available_functions = types.Tool(
+        function_declarations=[
+            schema_get_files_info,
+        ]
+    )
+
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=messages,
-        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-        )
+        config=types.GenerateContentConfig(
+            tools=[available_functions],
+            system_instruction=SYSTEM_PROMPT)
+    )
 
-    print(response.text)
-
-    if print_verbose:
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    print_response(user_prompt, response, print_verbose)
 
     return 0
 
