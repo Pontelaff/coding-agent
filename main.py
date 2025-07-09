@@ -26,6 +26,7 @@ All paths you provide should be relative to the working directory. You do not ne
 Add a short response text describing the actions you took.
 """
 
+
 def print_response(prompt: str, response: types.GenerateContentResponse, verbose: bool) -> None:
     if verbose:
         print(f"User prompt: {prompt}\n")
@@ -55,15 +56,10 @@ def parse_args(args: str) -> tuple[str, bool]:
 
     return args[1], print_verbose
 
-def main(args: str) -> int:
-    user_prompt, print_verbose = parse_args(args)
-    if user_prompt is None:
-        return 1
-
+def generate_response(user_prompt: str) -> types.GenerateContentResponse:
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
-    user_prompt = args[1]
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)])
     ]
@@ -84,6 +80,14 @@ def main(args: str) -> int:
             system_instruction=SYSTEM_PROMPT)
     )
 
+    return response
+
+def main(args: str) -> int:
+    user_prompt, print_verbose = parse_args(args)
+    if user_prompt is None:
+        return 1
+
+    response = generate_response(user_prompt)
     print_response(user_prompt, response, print_verbose)
 
     return 0
