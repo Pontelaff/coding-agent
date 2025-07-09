@@ -38,19 +38,26 @@ def print_response(prompt: str, response: types.GenerateContentResponse, verbose
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
-def main(args: str) -> int:
+def parse_args(args: str) -> tuple[str, bool]:
     print_verbose = False
     if len(args) <= 1 or type(args[1]) is not str:
         print("ERROR: Prompt is missing!")
-        return 1
+        return None, None
     if len(args) == 3:
         if args[2] == "--verbose":
             print_verbose = True
         else:
             print("ERROR: Unknown argument.")
-            return 1
+            return None, None
     if len(args) > 3:
         print("ERROR: Too many arguments! Make sure to enclose prompt in quotation marks.")
+        return None, None
+
+    return args[1], print_verbose
+
+def main(args: str) -> int:
+    user_prompt, print_verbose = parse_args(args)
+    if user_prompt is None:
         return 1
 
     load_dotenv()
