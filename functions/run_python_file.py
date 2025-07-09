@@ -2,19 +2,34 @@
 
 import os
 import subprocess
+from google.genai import types
 
-def run_python_file(working_directory: str, file_name: str) -> str:
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Execute a specified Python file, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The file path to execute, relative to the working directory.",
+            ),
+        },
+    ),
+)
+
+def run_python_file(working_directory: str, file_path: str) -> str:
     working_directory_path = os.path.abspath(working_directory)
-    file_path = os.path.abspath(os.path.join(working_directory, file_name))
-    if not file_path.startswith(working_directory_path):
-        return f'Error: Cannot execute "{file_name}" as it is outside the permitted working directory'
-    if not os.path.exists(file_path):
-        return f'Error: File "{os.path.basename(file_path)}" not found'
-    if not os.path.isfile(file_path) or not file_path[-3:] == ".py":
-        return f'Error: File not found or is not a Python file: "{file_name}"'
+    abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+    if not abs_file_path.startswith(working_directory_path):
+        return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
+    if not os.path.exists(abs_file_path):
+        return f'Error: File "{os.path.basename(abs_file_path)}" not found'
+    if not os.path.isfile(abs_file_path) or not abs_file_path[-3:] == ".py":
+        return f'Error: File not found or is not a Python file: "{file_path}"'
 
     try:
-        process = subprocess.run(["python3", file_path], capture_output=True, timeout=30, cwd=working_directory_path)
+        process = subprocess.run(["python3", abs_file_path], capture_output=True, timeout=30, cwd=working_directory_path)
     except Exception as e:
         return f"Error: executing Python file: {e}"
 
