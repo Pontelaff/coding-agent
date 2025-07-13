@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from config import MODEL_NAME, SYSTEM_PROMPT
+from config import MODEL_NAME, SYSTEM_PROMPT, ITERATION_LIMIT
 from call_function import available_functions, execute_function_calls
 
 
@@ -68,21 +68,33 @@ def generate_response(client: genai.Client, user_prompt: str, verbose: bool) -> 
             system_instruction=SYSTEM_PROMPT)
     )
 
-    return response
+    for _ in range(ITERATION_LIMIT):
+        if response.function_calls is None:
+            return response.text
 
-def process_response(response: types.GenerateContentResponse, verbose: bool) -> None:
-    if response.function_calls is not None:
+        for candidate in response.candidates:
+            messages.append(candidate.content)
+
         try:
-            execute_function_calls(response.function_calls, verbose)
+            function_responses = execute_function_calls(response.function_calls, verbose)
         except RuntimeError as e:
             print(e)
             return
-    elif response.text is not None:
-        print(response.text)
+        messages.append(types.Content(parts=function_responses, role='tool'))
 
-    if verbose:
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+        if verbose:
+            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions],
+                system_instruction=SYSTEM_PROMPT)
+        )
+
+    return response.text
 
 def main(args: str) -> int:
     user_prompt, print_verbose = parse_args(args)
@@ -92,7 +104,7 @@ def main(args: str) -> int:
     client = init_genai_client()
     response = generate_response(client, user_prompt, print_verbose)
 
-    process_response(response, print_verbose)
+    print(response)
 
     return 0
 

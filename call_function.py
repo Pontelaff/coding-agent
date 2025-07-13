@@ -18,18 +18,18 @@ available_functions = types.Tool(
 )
 
 
-def execute_function_calls(function_calls: types.FunctionCall, verbose: bool) -> list[types.Content]:
+def execute_function_calls(function_calls: types.FunctionCall, verbose: bool) -> list[types.Part]:
     function_responses = []
     for call in function_calls:
         function_call_result = call_function(call, verbose)
         if not function_call_result.parts or not function_call_result.parts[0].function_response:
-            raise RuntimeError(f'ERROR: Empty function call result: "{call.name}"')
+            raise RuntimeError(f'Empty function call result: "{call.name}"')
         elif verbose:
             print(f"-> {function_call_result.parts[0].function_response.response}")
-        function_responses.append(function_call_result)
+        function_responses.append(function_call_result.parts[0])
 
     if not function_responses:
-        raise RuntimeError(f'ERROR: Failed to get function responses')
+        raise RuntimeError(f'Failed to get function responses')
 
     return function_responses
 

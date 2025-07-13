@@ -1,6 +1,6 @@
 # config.py
 
-WORKING_DIR = "../calculator"
+WORKING_DIR = "../pw_check"
 
 MODEL_NAME = "gemini-2.0-flash"
 
@@ -15,6 +15,6 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
-
-Add a short response text describing the actions you took.
 """
+
+ITERATION_LIMIT = 20
