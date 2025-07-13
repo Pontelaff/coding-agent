@@ -46,8 +46,26 @@ def print_response(prompt: str, response: types.GenerateContentResponse, verbose
 
 def parse_args(args: str) -> tuple[str, bool]:
     print_verbose = False
+    if "--help" in args or "-?" in args:
+        print('''
+AI Coding Agent
+This agent uses the Google GenAI API to assist with development.
+
+USAGE: python main.py "<PROMPT>" [--verbose]
+EXAMPLE: python main.py "Fix formatting in print_info() in file pgk/data_reader.py" --verbose
+
+The Agent can use function calls to:
+- List files and directories
+- Read file contents
+- Execute Python files with optional arguments
+- Write or overwrite files
+
+Relative filepaths are supported within the working directory.
+''')
+        return None, None
+
     if len(args) <= 1 or type(args[1]) is not str:
-        print("ERROR: Prompt is missing!")
+        print('AI Coding Agent\nUSAGE: python ./main.py "<PROMPT>" [--verbose]')
         return None, None
     if len(args) == 3:
         if args[2] == "--verbose":
