@@ -25,7 +25,10 @@ def get_file_metadata(path: str) -> str:
 
 def get_files_info(working_directory: str, directory: None|str = None) -> str:
     working_directory_path = os.path.abspath(working_directory)
-    directory_path = os.path.abspath(os.path.join(working_directory, directory))
+    if directory:
+        directory_path = os.path.abspath(os.path.join(working_directory, directory))
+    else:
+        directory_path = working_directory_path
 
     if not directory_path.startswith(working_directory_path):
         return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
