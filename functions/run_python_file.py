@@ -38,6 +38,6 @@ def run_python_file(working_directory: str, file_path: str) -> str:
     if (process.stderr is None) and (process.stdout is None):
         output += "\nNo output produced."
     if process.returncode != 0:
-        output += "\nProcess exited with code " + process.returncode
+        output += "\nProcess exited with code " + str(process.returncode)
 
     return output
