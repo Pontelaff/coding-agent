@@ -2,7 +2,6 @@
 
 from google.genai import types
 
-from config import WORKING_DIR
 from functions.get_files_info import get_files_info, schema_get_files_info
 from functions.get_file_content import get_file_content, schema_get_file_content
 from functions.write_file import write_file, schema_write_file
@@ -18,10 +17,10 @@ available_functions = types.Tool(
 )
 
 
-def execute_function_calls(function_calls: types.FunctionCall, verbose: bool) -> list[types.Part]:
+def execute_function_calls(function_calls: types.FunctionCall, verbose: bool, working_dir: str) -> list[types.Part]:
     function_responses = []
     for call in function_calls:
-        function_call_result = call_function(call, verbose)
+        function_call_result = call_function(call, working_dir, verbose)
         if not function_call_result.parts or not function_call_result.parts[0].function_response:
             raise RuntimeError(f'Empty function call result: "{call.name}"')
         elif verbose:
@@ -33,7 +32,7 @@ def execute_function_calls(function_calls: types.FunctionCall, verbose: bool) ->
 
     return function_responses
 
-def call_function(function_call_part: types.FunctionCall, verbose=False) -> types.Content:
+def call_function(function_call_part: types.FunctionCall, working_dir: str, verbose: bool = False) -> types.Content:
     functions = {
         "get_files_info" : get_files_info,
         "get_file_content" : get_file_content,
@@ -49,7 +48,7 @@ def call_function(function_call_part: types.FunctionCall, verbose=False) -> type
 
     func = functions[function_name]
     try:
-        function_result = func(working_directory=WORKING_DIR, **function_args)
+        function_result = func(working_directory=working_dir, **function_args)
     except NameError:
         return types.Content(
             role="tool",

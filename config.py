@@ -1,7 +1,5 @@
 # config.py
 
-WORKING_DIR = "../pw_check"
-
 MODEL_NAME = "gemini-2.0-flash"
 
 SYSTEM_PROMPT = """

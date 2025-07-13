@@ -17,8 +17,8 @@ def parse_args(args: str) -> tuple[str, bool]:
 AI Coding Agent
 This agent uses the Google GenAI API to assist with development.
 
-USAGE: python main.py "<PROMPT>" [--verbose]
-EXAMPLE: python main.py "Fix formatting in print_info() in file pgk/data_reader.py" --verbose
+USAGE: python main.py <working_dir> "<PROMPT>" [--verbose]
+EXAMPLE: python main.py ../src "Fix formatting in print_info() in file pgk/data_reader.py" --verbose
 
 The Agent can use function calls to:
 - List files and directories
@@ -30,20 +30,16 @@ Relative filepaths are supported within the working directory.
 ''')
         return None, None
 
-    if len(args) <= 1 or type(args[1]) is not str:
-        print('AI Coding Agent\nUSAGE: python ./main.py "<PROMPT>" [--verbose]')
+    if len(args) <= 2 or type(args[1]) is not str:
+        print('AI Coding Agent\nUSAGE: python ./main.py <working_dir> "<PROMPT>" [--verbose]')
         return None, None
-    if len(args) == 3:
-        if args[2] == "--verbose":
-            print_verbose = True
-        else:
-            print("ERROR: Unknown argument.")
-            return None, None
-    if len(args) > 3:
+    if len(args) > 4:
         print("ERROR: Too many arguments! Make sure to enclose prompt in quotation marks.")
+        print('AI Coding Agent\nUSAGE: python ./main.py <working_dir> "<PROMPT>" [--verbose]')
         return None, None
+    print_verbose = "--verbose" in args
 
-    return args[1], print_verbose
+    return args[1], args[2], print_verbose
 
 def init_genai_client() -> genai.Client:
     load_dotenv()
@@ -52,7 +48,7 @@ def init_genai_client() -> genai.Client:
 
     return client
 
-def generate_response(client: genai.Client, user_prompt: str, verbose: bool) -> types.GenerateContentResponse:
+def generate_response(client: genai.Client, user_prompt: str, verbose: bool, working_dir: str) -> types.GenerateContentResponse:
     if verbose:
         print(f"User prompt: {user_prompt}\n")
 
@@ -76,7 +72,7 @@ def generate_response(client: genai.Client, user_prompt: str, verbose: bool) -> 
             messages.append(candidate.content)
 
         try:
-            function_responses = execute_function_calls(response.function_calls, verbose)
+            function_responses = execute_function_calls(response.function_calls, verbose, working_dir)
         except RuntimeError as e:
             print(e)
             return
@@ -97,12 +93,12 @@ def generate_response(client: genai.Client, user_prompt: str, verbose: bool) -> 
     return response.text
 
 def main(args: str) -> int:
-    user_prompt, print_verbose = parse_args(args)
+    working_dir, user_prompt, print_verbose = parse_args(args)
     if user_prompt is None:
         return 1
 
     client = init_genai_client()
-    response = generate_response(client, user_prompt, print_verbose)
+    response = generate_response(client, user_prompt, print_verbose, working_dir)
 
     print(response)
 
